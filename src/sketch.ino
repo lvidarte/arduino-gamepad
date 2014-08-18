@@ -1,3 +1,5 @@
+#define SERIAL_SPEED 9600
+
 #define PIN_X  A0
 #define PIN_Y  A1
 #define PIN_SW 5
@@ -17,41 +19,41 @@ byte last_bt = 255;
 
 void init_button()
 {
-  pinMode(PIN_BT, INPUT);
-  digitalWrite(PWR_BT, HIGH);
+    pinMode(PIN_BT, INPUT);
+    digitalWrite(PWR_BT, HIGH);
 }
 
-void init_joistick()
+void init_joystick()
 {
     pinMode(PIN_SW, INPUT);
     digitalWrite(PIN_SW, HIGH);
 }
 
-byte map_value(int value)
+byte map_axis(int axis)
 {
-    return map(value, 0, 1023, 0, 63);
+    return map(axis, 0, 1023, 0, 63);
 }
 
 byte read_x()
 {
     int x = analogRead(PIN_X);
-    return map_value(x);
+    return map_axis(x);
 }
 
 byte read_y()
 {
     int y = analogRead(PIN_Y);
-    return map_value(y);
+    return map_axis(y);
 }
 
 byte read_sw()
 {
-    return digitalRead(PIN_SW) == 0 ? 1 : 0;
+    return ! digitalRead(PIN_SW);
 }
 
 byte read_bt()
 {
-    return digitalRead(PIN_BT) == 0 ? 1 : 0;
+    return ! digitalRead(PIN_BT);
 }
 
 void send_x()
@@ -94,7 +96,7 @@ void send_bt()
     }
 }
 
-void send_report()
+void send_status()
 {
     send(CMD_X, last_x);
     send(CMD_Y, last_y);
@@ -110,20 +112,15 @@ void send(byte cmd, byte value)
 void setup()
 {
     init_button();
-    init_joistick();
-    Serial.begin(9600);
+    init_joystick();
+    Serial.begin(SERIAL_SPEED);
 }
 
 void loop()
 {
-    if (Serial.available())
+    if (Serial.available() && Serial.read() == 0)
     {
-        byte data = Serial.read();
-
-        if (data == 0)
-        {
-            send_report();
-        }
+        send_status();
     }
 
     send_x();
