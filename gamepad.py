@@ -16,6 +16,8 @@ CMD_BT = 0b11000000
 
 CMD_NAMES = ('X', 'Y', 'SW', 'BT')
 
+STOP_VALUES = (31, 32)
+
 
 try:
     conn = serial.Serial(USB_DEV, 9600)
@@ -31,21 +33,65 @@ class Event(object):
         self.y = y
         self.switch = switch
         self.button = button
-        self.name = self.get_name()
+        self.types = self.get_types()
 
-    def get_name(self):
+    def get_types(self):
+        types = []
+        types += self._get_types_cmd_xy()
+        types += self._get_types_cmd_sw()
+        types += self._get_types_cmd_bt()
+        return types
+
+    def _get_types_cmd_xy(self):
+        types = []
+        if self.cmd in (CMD_X, CMD_Y):
+            if self.x in STOP_VALUES and self.y in STOP_VALUES:
+                types.append('stop')
+            else:
+                types.append('move')
+                types += self._get_types_cmd_x()
+                types += self._get_types_cmd_y()
+        return types
+
+    def _get_types_cmd_x(self):
+        types = []
         if self.cmd == CMD_X:
-            return 'change-x'
-        elif self.cmd == CMD_Y:
-            return 'change-y'
-        elif self.cmd == CMD_SW and self.switch == 0:
-            return 'release-switch'
-        elif self.cmd == CMD_SW and self.switch == 1:
-            return 'press-switch'
-        elif self.cmd == CMD_BT and self.button == 0:
-            return 'release-button'
-        elif self.cmd == CMD_BT and self.button == 1:
-            return 'press-button'
+            types.append('move-x')
+            if self.x > STOP_VALUES[-1]:
+                types.append('move-right')
+            if self.x < STOP_VALUES[0]:
+                types.append('move-left')
+        return types
+
+    def _get_types_cmd_y(self):
+        types = []
+        if self.cmd == CMD_Y:
+            types.append('move-y')
+            if self.y > STOP_VALUES[-1]:
+                types.append('move-bottom')
+            if self.y < STOP_VALUES[0]:
+                types.append('move-top')
+        return types
+
+    def _get_types_cmd_sw(self):
+        types = []
+        if self.cmd == CMD_SW:
+            types.append('switch')
+            if self.switch:
+                types.append('switch-press')
+            else:
+                types.append('switch-release')
+        return types
+
+    def _get_types_cmd_bt(self):
+        types = []
+        if self.cmd == CMD_BT:
+            types.append('button')
+            if self.button:
+                types.append('button-press')
+            else:
+                types.append('button-release')
+        return types
 
 class Gamepad(object):
 
@@ -98,7 +144,8 @@ class Gamepad(object):
             data = ord(self.conn.read())
             self.set(data)
             event = self.get_event()
-            self.run_callbacks(event)
+            print "events%s, xy(%s, %s)" % (event.types, self.x, self.y)
+            #self.run_callbacks(event)
 
 
 if __name__ == '__main__':
