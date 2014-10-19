@@ -57,19 +57,20 @@ class Event(object):
     def is_button(self):
         return self.cmd == CMD_BT
 
-    def is_center(self):
-        return self.state.x in STOP_VALUES and self.state.y in STOP_VALUES
+    def is_move_center(self):
+        return self.state.x in STOP_VALUES and \
+               self.state.y in STOP_VALUES
 
-    def is_left(self):
+    def is_move_left(self):
         return self.state.x < STOP_VALUES[0]
 
-    def is_right(self):
+    def is_move_right(self):
         return self.state.x > STOP_VALUES[-1]
 
-    def is_up(self):
+    def is_move_up(self):
         return self.state.y < STOP_VALUES[0]
 
-    def is_down(self):
+    def is_move_down(self):
         return self.state.y > STOP_VALUES[-1]
 
     def _get_names_move(self):
@@ -90,11 +91,11 @@ class Event(object):
     def _get_names_move_x_position(self):
         names = []
         if self.is_x():
-            if self.is_right():
+            if self.is_move_right():
                 names.append('move-right')
-            elif self.is_left():
+            elif self.is_move_left():
                 names.append('move-left')
-            elif self.is_center():
+            elif self.is_move_center():
                 names.append('move-center')
         return names
 
@@ -108,11 +109,11 @@ class Event(object):
     def _get_names_move_y_position(self):
         names = []
         if self.is_y():
-            if self.is_up():
+            if self.is_move_up():
                 names.append('move-up')
-            elif self.is_down():
+            elif self.is_move_down():
                 names.append('move-down')
-            elif self.is_center():
+            elif self.is_move_center():
                 names.append('move-center')
         return names
 
@@ -161,7 +162,7 @@ class Gamepad(object):
         self.conn = conn
         self.state = State()
         self.callbacks = []
-        self.event_hold(None)
+        self.hold_event(None)
 
     def on(self, event_name, handler):
         self.callbacks.append({
@@ -189,12 +190,11 @@ class Gamepad(object):
             self.state.switch = self.param
         if self.cmd == CMD_BT:
             self.state.button = self.param
-        print self.state
 
     def get_event(self):
         return Event(self.cmd, copy.copy(self.state))
 
-    def event_hold(self, event):
+    def hold_event(self, event):
         if event is None:
             self.hold = None
         else:
@@ -214,13 +214,13 @@ class Gamepad(object):
         t.start()
 
     def dispatcher(self, event):
-        if event.is_center():
-            self.event_hold(None)
+        if event.is_move_center():
+            self.hold_event(None)
         for callback in self.callbacks:
             for event_name in event.names:
                 if event_name == callback['event_name']:
                     if self.event_is_holdeable(event):
-                        self.event_hold(event)
+                        self.hold_event(event)
                     self.start_thread(callback['handler'], event)
 
     def serial_read(self):

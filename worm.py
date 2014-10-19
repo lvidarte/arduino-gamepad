@@ -1,4 +1,4 @@
-#!/usr/bin/python -i
+#!/usr/bin/python
 
 import time
 import serial
@@ -10,14 +10,25 @@ class Worm:
     def __init__(self, gamepad, matrix):
         self.gamepad = gamepad
         self.matrix = matrix
+        self.start()
+
+    def start(self):
+        self.init()
+        self.gamepad.on('button-press', self.restart)
+        self.gamepad.on('move', self.move)
+        self.gamepad.listen()
+
+    def init(self):
         self.matrix.reset()
-        self.set_rand_snake()
-        self.draw_snake()
+        self.set_rand_worm()
+        self.draw_worm()
+
+    def restart(self, _):
         self.init()
 
-    def draw_snake(self):
+    def draw_worm(self):
         self.matrix.clear_all()
-        for i, pos in enumerate(self.snake):
+        for i, pos in enumerate(self.worm):
             x, y = pos
             if i == 0:
                 r, g, b = 15, 0, 0
@@ -25,57 +36,34 @@ class Worm:
                 r, g, b = 0, 15, 0
             self.matrix.set(x=x, y=y, r=r, g=g, b=b)
 
-    def set_rand_snake(self):
+    def set_rand_worm(self):
         self.matrix.set_rand_x()
         self.matrix.set_rand_y()
-        self.snake = [(self.matrix.x, self.matrix.y)]
+        self.worm = [(self.matrix.x, self.matrix.y)]
         for i in range(3):
-            x, y = self.snake[i]
-            self.snake.append((x - 1, y))
-
-    def button(self, event):
-        print "clear"
-        self.matrix.clear_all()
-        self.matrix.set_rand_rgb()
-        self.matrix.set_rand_x()
-        self.matrix.set_rand_y()
-        self.matrix.fill()
-
-    def switch(self, event):
-        print "random color"
-        self.matrix.set_rand_rgb()
-        self.matrix.fill()
+            x, y = self.worm[i]
+            self.worm.append((x - 1, y))
 
     def move(self, event):
-        print "MOVE"
         while self.gamepad.event_is_hold(event):
-            self.move_snake()
-            self.draw_snake()
+            self.move_worm()
+            self.draw_worm()
             time.sleep(.5)
 
-    def move_right(self, event):
-        print "move right"
-
-    def move_snake(self):
+    def move_worm(self):
         event = self.gamepad.last_event
-        head = self.snake[0]
-        if event.is_left():
+        head = self.worm[0]
+        if event.is_move_left():
             head = head[0] - 1, head[1]
-        if event.is_right():
+        if event.is_move_right():
             head = head[0] + 1, head[1]
-        if event.is_up():
+        if event.is_move_up():
             head = head[0], head[1] + 1
-        if event.is_down():
+        if event.is_move_down():
             head = head[0], head[1] - 1
-        self.snake.insert(0, head)
-        self.snake.pop()
+        self.worm.insert(0, head)
+        self.worm.pop()
 
-    def init(self):
-        self.gamepad.on('button-press', self.button)
-        self.gamepad.on('switch-press', self.switch)
-        self.gamepad.on('move', self.move)
-        self.gamepad.on('move-right', self.move_right)
-        self.gamepad.listen()
 
 if __name__ == '__main__':
 
