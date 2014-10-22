@@ -1,6 +1,6 @@
 # Arduino Gamepad
 
-![Fritzing blueprint](https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png)
+![Fritzing blueprint](https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png =400x)
 
 ### Load Arduino Sketch
 
