@@ -29,10 +29,11 @@ class Event(object):
 
     get_id = itertools.count().next
 
-    def __init__(self, cmd, state):
+    def __init__(self, cmd, state, stop_values):
         self.id = Event.get_id()
         self.cmd = cmd
         self.state = state
+        self.stop_values = stop_values
         self.names = self.get_names()
 
     def get_names(self):
@@ -58,20 +59,20 @@ class Event(object):
         return self.cmd == CMD_BT
 
     def is_move_center(self):
-        return self.state.x in STOP_VALUES and \
-               self.state.y in STOP_VALUES
+        return self.state.x in self.stop_values and \
+               self.state.y in self.stop_values
 
     def is_move_left(self):
-        return self.state.x < STOP_VALUES[0]
+        return self.state.x < self.stop_values[0]
 
     def is_move_right(self):
-        return self.state.x > STOP_VALUES[-1]
+        return self.state.x > self.stop_values[-1]
 
     def is_move_up(self):
-        return self.state.y < STOP_VALUES[0]
+        return self.state.y < self.stop_values[0]
 
     def is_move_down(self):
-        return self.state.y > STOP_VALUES[-1]
+        return self.state.y > self.stop_values[-1]
 
     def _get_names_move(self):
         names = []
@@ -163,6 +164,7 @@ class Gamepad(object):
         self.state = State()
         self.callbacks = []
         self.hold_event(None)
+        self.set_sensibility(10)
 
     def on(self, event_name, handler):
         self.callbacks.append({
@@ -191,8 +193,23 @@ class Gamepad(object):
         if self.cmd == CMD_BT:
             self.state.button = self.param
 
+    def set_sensibility(self, value = 10):
+        if value > 10:
+            value = 10
+        if value < 1:
+            value = 1
+        factor = 30 - (value * 3)
+        self.stop_values = (
+            STOP_VALUES[0] - factor,
+            STOP_VALUES[-1] + factor + 1
+        )
+
     def get_event(self):
-        return Event(self.cmd, copy.copy(self.state))
+        return Event(
+            self.cmd,
+            copy.copy(self.state),
+            self.stop_values
+        )
 
     def hold_event(self, event):
         if event is None:

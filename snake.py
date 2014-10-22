@@ -5,9 +5,11 @@ import time
 import serial
 import sys
 
-INIT_LEN = 4
-FOOD_COLOR = (0, 0, 15)
-WALL_COLOR = (0, 0, 1)
+BODY_LEN   = 4
+BODY_COLOR = (0, 15, 0)
+HEAD_COLOR = (15, 0, 0)
+FOOD_COLOR = (15, 15, 0)
+WALL_COLOR = (0, 0, 15)
 
 
 class Snake:
@@ -88,17 +90,24 @@ class Snake:
         for i, pos in enumerate(self.snake):
             x, y = pos
             if i == 0:
-                r, g, b = 15, 0, 0
+                r, g, b = HEAD_COLOR
             else:
-                r, g, b = 0, self.get_degree(i), 0
+                r, g, b = self.get_body_color(i)
             self.matrix.set(x=x, y=y, r=r, g=g, b=b)
 
-    def get_degree(self, i):
-        divisor = 15 / (len(self.snake) - 1)
-        color = 15 - (divisor * i)
-        if color < divisor:
-            color = divisor
-        return color
+    def get_body_color(self, i):
+        return (
+            self.get_gradient(BODY_COLOR[0], i),
+            self.get_gradient(BODY_COLOR[1], i),
+            self.get_gradient(BODY_COLOR[2], i),
+        )
+
+    def get_gradient(self, color, i):
+        relation = color / (len(self.snake) - 1)
+        gradient = color - (relation * i)
+        if gradient < relation:
+            gradient = relation
+        return gradient
 
     def draw_food(self):
         if self.food == None:
@@ -151,7 +160,7 @@ class Snake:
 
     def end(self):
         if self.score == (matrix.COLS * matrix.ROWS) - \
-                         INIT_LEN - len(self.wall):
+                         BODY_LEN - len(self.wall):
             print 'You Win!'
         else:
             print 'Game Over!'
@@ -187,6 +196,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     g = gamepad.Gamepad(serial1)
+    g.set_sensibility(2)
     m = matrix.Matrix(serial2)
     time.sleep(2)
     s = Snake(g, m)
