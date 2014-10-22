@@ -1,6 +1,6 @@
 # Arduino Gamepad
 
-<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" style="width:400px" />
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" width="400px" />
 
 ### Load Arduino Sketch
 
@@ -10,8 +10,6 @@ Then build and upload the Arduino sketch. I use [inotool](http://inotool.org) fo
 
 
 ### Use example
-
-Basic import
 
 ```python
 from serial import Serial
@@ -33,3 +31,7 @@ Attach the callback to an event
 ```python
 gamepad.on('button-press', start)
 ```
+
+### Snake example
+
+<iframe width="560" height="315" src="//www.youtube.com/embed/qr-ROlCskwY" frameborder="0" allowfullscreen></iframe>
