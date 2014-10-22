@@ -34,4 +34,4 @@ gamepad.on('button-press', start)
 
 ### Snake example
 
-<iframe width="560" height="315" src="//www.youtube.com/embed/qr-ROlCskwY" frameborder="0" allowfullscreen></iframe>
+[![Snake Arduino](http://img.youtube.com/vi/qr-ROlCskwY/0.jpg)](https://www.youtube.com/watch?v=qr-ROlCskwY)
