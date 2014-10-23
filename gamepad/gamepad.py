@@ -242,6 +242,7 @@ class Gamepad(object):
 
     def start_thread(self, handler, event):
         t = threading.Thread(target=handler, args=(event,))
+        t.daemon = True
         t.start()
 
     def dispatcher(self, event):
