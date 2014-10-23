@@ -30,7 +30,25 @@ Attach the callback to an event
 
 ```python
 gamepad.on('button-press', start)
+gamepad.listen()
 ```
+
+### Events
+
+    move
+    move-x
+    move-y
+    move-right
+    move-left
+    move-up
+    move-down
+    move-center
+    button
+    button-press
+    button-release
+    switch
+    switch-press
+    switch-release
 
 ### Snake example
 
