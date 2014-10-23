@@ -13,8 +13,6 @@ CMD_Y  = 0b01000000
 CMD_SW = 0b10000000
 CMD_BT = 0b11000000
 
-CMD_NAMES = ('X', 'Y', 'SW', 'BT')
-
 STOP_VALUES = (31, 32)
 
 NO_REPEATABLE_EVENTS = (
@@ -29,25 +27,22 @@ class Event(object):
 
     get_id = itertools.count().next
 
-    def __init__(self, cmd, state, stop_values):
+    def __init__(self, state, stop_values):
         self.id = Event.get_id()
-        self.cmd = cmd
         self.state = state
         self.stop_values = stop_values
         self.names = self.get_names()
 
     def get_names(self):
-        names = []
-        names += self._get_names_move()
-        names += self._get_names_switch()
-        names += self._get_names_button()
-        return names
+        return self._get_names_move() + \
+               self._get_names_switch() + \
+               self._get_names_button()
 
     def is_x(self):
-        return self.cmd == CMD_X
+        return self.state.cmd == CMD_X
 
     def is_y(self):
-        return self.cmd == CMD_Y
+        return self.state.cmd == CMD_Y
 
     def is_move(self):
         return self.is_x() or self.is_y()
@@ -69,7 +64,7 @@ class Event(object):
         return self.state.y > self.stop_values[-1]
 
     def is_switch(self):
-        return self.cmd == CMD_SW
+        return self.state.cmd == CMD_SW
 
     def is_switch_press(self):
         return self.is_switch() and self.state.switch == 1
@@ -78,7 +73,7 @@ class Event(object):
         return self.is_switch() and self.state.switch == 0
 
     def is_button(self):
-        return self.cmd == CMD_BT
+        return self.state.cmd == CMD_BT
 
     def is_button_press(self):
         return self.is_button() and self.state.button == 1
@@ -98,12 +93,6 @@ class Event(object):
         names = []
         if self.is_x():
             names.append('move-x')
-            names += self._get_names_move_x_position()
-        return names
-
-    def _get_names_move_x_position(self):
-        names = []
-        if self.is_x():
             if self.is_move_right():
                 names.append('move-right')
             elif self.is_move_left():
@@ -114,14 +103,8 @@ class Event(object):
 
     def _get_names_move_y(self):
         names = []
-        if self.cmd == CMD_Y:
-            names.append('move-y')
-            names += self._get_names_move_y_position()
-        return names
-
-    def _get_names_move_y_position(self):
-        names = []
         if self.is_y():
+            names.append('move-y')
             if self.is_move_up():
                 names.append('move-up')
             elif self.is_move_down():
@@ -153,11 +136,30 @@ class Event(object):
 
 class State(object):
 
-    def __init__(self, x=0, y=0, switch=0, button=0):
-        self.x = x
-        self.y = y
-        self.switch = switch
-        self.button = button
+    def __init__(self, data):
+        self.x = None
+        self.y = None
+        self.switch = None
+        self.button = None
+        self.set(data)
+
+    def set(self, data):
+        self.cmd = self._get_cmd(data)
+        param = self._get_param(data)
+        if self.cmd == CMD_X:
+            self.x = param
+        if self.cmd == CMD_Y:
+            self.y = param
+        if self.cmd == CMD_SW:
+            self.switch = param
+        if self.cmd == CMD_BT:
+            self.button = param
+
+    def _get_cmd(self, data):
+        return data & CMD_MASK
+
+    def _get_param(self, data):
+        return data & PARAM_MASK
 
     def get_axes(self):
         return (self.x, self.y)
@@ -175,7 +177,7 @@ class Gamepad(object):
 
     def __init__(self, conn):
         self.conn = conn
-        self.state = State()
+        self.event = None
         self.callbacks = []
         self.hold_event(None)
         self.set_sensibility(10)
@@ -186,27 +188,6 @@ class Gamepad(object):
             'handler'   : handler
         })
 
-    def get_cmd(self, data):
-        return data & CMD_MASK
-
-    def get_param(self, data):
-        return data & PARAM_MASK
-
-    def get_cmd_name(self, cmd):
-        return CMD_NAMES[cmd >> 6]
-
-    def set_state(self, data):
-        self.cmd = self.get_cmd(data)
-        self.param = self.get_param(data)
-        if self.cmd == CMD_X:
-            self.state.x = self.param
-        if self.cmd == CMD_Y:
-            self.state.y = self.param
-        if self.cmd == CMD_SW:
-            self.state.switch = self.param
-        if self.cmd == CMD_BT:
-            self.state.button = self.param
-
     def set_sensibility(self, value = 10):
         if value > 10:
             value = 10
@@ -216,13 +197,6 @@ class Gamepad(object):
         self.stop_values = (
             STOP_VALUES[0] - factor,
             STOP_VALUES[-1] + factor + 1
-        )
-
-    def get_event(self):
-        return Event(
-            self.cmd,
-            copy.copy(self.state),
-            self.stop_values
         )
 
     def hold_event(self, event):
@@ -255,15 +229,18 @@ class Gamepad(object):
                         self.hold_event(event)
                     self.start_thread(callback['handler'], event)
 
+    def create_event(self, data):
+        state = State(data)
+        return Event(state, self.stop_values)
+
     def serial_read(self):
         return ord(self.conn.read())
 
     def listen(self):
         while True:
             data = self.serial_read()
-            self.set_state(data)
-            self.last_event = self.get_event()
-            self.dispatcher(self.last_event)
+            self.event = self.create_event(data)
+            self.dispatcher(self.event)
 
     def log(self):
         print self.__str__()
