@@ -52,12 +52,6 @@ class Event(object):
     def is_move(self):
         return self.is_x() or self.is_y()
 
-    def is_switch(self):
-        return self.cmd == CMD_SW
-
-    def is_button(self):
-        return self.cmd == CMD_BT
-
     def is_move_center(self):
         return self.state.x in self.stop_values and \
                self.state.y in self.stop_values
@@ -73,6 +67,24 @@ class Event(object):
 
     def is_move_down(self):
         return self.state.y > self.stop_values[-1]
+
+    def is_switch(self):
+        return self.cmd == CMD_SW
+
+    def is_switch_press(self):
+        return self.is_switch() and self.state.switch == 1
+
+    def is_switch_release(self):
+        return self.is_switch() and self.state.switch == 0
+
+    def is_button(self):
+        return self.cmd == CMD_BT
+
+    def is_button_press(self):
+        return self.is_button() and self.state.button == 1
+
+    def is_button_release(self):
+        return self.is_button() and self.state.button == 0
 
     def _get_names_move(self):
         names = []
@@ -122,9 +134,9 @@ class Event(object):
         names = []
         if self.is_switch():
             names.append('switch')
-            if self.state.switch:
+            if self.is_switch_press():
                 names.append('switch-press')
-            else:
+            elif self.is_switch_release():
                 names.append('switch-release')
         return names
 
@@ -132,11 +144,12 @@ class Event(object):
         names = []
         if self.is_button():
             names.append('button')
-            if self.state.button:
+            if self.is_button_press():
                 names.append('button-press')
-            else:
+            elif self.is_button_release():
                 names.append('button-release')
         return names
+
 
 class State(object):
 
@@ -156,6 +169,7 @@ class State(object):
 
     def __repr__(self):
         return self.__str__()
+
 
 class Gamepad(object):
 
