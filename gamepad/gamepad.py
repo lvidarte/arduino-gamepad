@@ -1,6 +1,6 @@
 import threading
-import copy
 import itertools
+import copy
 
 
 CMD_MASK   = 0b11000000
@@ -13,6 +13,10 @@ CMD_Y  = 0b01000000
 CMD_SW = 0b10000000
 CMD_BT = 0b11000000
 
+CMD_NAMES = ('X', 'Y', 'SW', 'BT')
+
+BUTTON_STATUS = ('released', 'pressed')
+
 STOP_VALUES = (31, 32)
 
 NO_REPEATABLE_EVENTS = (
@@ -23,7 +27,7 @@ NO_REPEATABLE_EVENTS = (
 )
 
 
-class Event(object):
+class Event:
 
     get_id = itertools.count().next
 
@@ -39,10 +43,10 @@ class Event(object):
                self._get_names_button()
 
     def is_x(self):
-        return self.state.cmd == CMD_X
+        return self.state.data.cmd == CMD_X
 
     def is_y(self):
-        return self.state.cmd == CMD_Y
+        return self.state.data.cmd == CMD_Y
 
     def is_move(self):
         return self.is_x() or self.is_y()
@@ -64,7 +68,7 @@ class Event(object):
         return self.state.y > self.stop_values[-1]
 
     def is_switch(self):
-        return self.state.cmd == CMD_SW
+        return self.state.data.cmd == CMD_SW
 
     def is_switch_press(self):
         return self.is_switch() and self.state.switch == 1
@@ -73,7 +77,7 @@ class Event(object):
         return self.is_switch() and self.state.switch == 0
 
     def is_button(self):
-        return self.state.cmd == CMD_BT
+        return self.state.data.cmd == CMD_BT
 
     def is_button_press(self):
         return self.is_button() and self.state.button == 1
@@ -134,26 +138,11 @@ class Event(object):
         return names
 
 
-class State(object):
+class Data:
 
     def __init__(self, data):
-        self.x = None
-        self.y = None
-        self.switch = None
-        self.button = None
-        self.set(data)
-
-    def set(self, data):
         self.cmd = self._get_cmd(data)
-        param = self._get_param(data)
-        if self.cmd == CMD_X:
-            self.x = param
-        if self.cmd == CMD_Y:
-            self.y = param
-        if self.cmd == CMD_SW:
-            self.switch = param
-        if self.cmd == CMD_BT:
-            self.button = param
+        self.param = self._get_param(data)
 
     def _get_cmd(self, data):
         return data & CMD_MASK
@@ -161,13 +150,43 @@ class State(object):
     def _get_param(self, data):
         return data & PARAM_MASK
 
+    def __str__(self):
+        return "(%s, %s)" % (
+            CMD_NAMES[self.cmd >> 6], self.param
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class State:
+
+    def __init__(self, x=0, y=0, switch=0, button=0):
+        self.x = x
+        self.y = y
+        self.switch = switch
+        self.button = button
+        self.data = None
+
     def get_axes(self):
         return (self.x, self.y)
 
+    def update(self, data):
+        self.data = data
+        if data.cmd == CMD_X:
+            self.x = data.param
+        elif data.cmd == CMD_Y:
+            self.y = data.param
+        elif data.cmd == CMD_SW:
+            self.switch = data.param
+        elif data.cmd == CMD_BT:
+            self.button = data.param
+
     def __str__(self):
-        return "(%s, %s) switch:%s button:%s" % (
-            self.x, self.y, self.switch, self.button
-        )
+        return "xy(%s, %s) switch:%s, button:%s" % (
+            self.x, self.y,
+            BUTTON_STATUS(self.switch),
+            BUTTON_STATUS(self.button))
 
     def __repr__(self):
         return self.__str__()
@@ -175,8 +194,9 @@ class State(object):
 
 class Gamepad(object):
 
-    def __init__(self, conn):
-        self.conn = conn
+    def __init__(self, serial):
+        self.serial = serial
+        self.state = State()
         self.event = None
         self.callbacks = []
         self.hold_event(None)
@@ -219,6 +239,21 @@ class Gamepad(object):
         t.daemon = True
         t.start()
 
+    def listen(self):
+        while True:
+            data = self.read_data()
+            self.state.update(data)
+            self.event = self.create_event()
+            self.dispatcher(self.event)
+
+    def read_data(self):
+        data = ord(self.serial.read())
+        return Data(data)
+
+    def create_event(self):
+        state = copy.copy(self.state)
+        return Event(state, self.stop_values)
+
     def dispatcher(self, event):
         if event.is_move_center():
             self.hold_event(None)
@@ -228,19 +263,6 @@ class Gamepad(object):
                     if self.event_is_holdeable(event):
                         self.hold_event(event)
                     self.start_thread(callback['handler'], event)
-
-    def create_event(self, data):
-        state = State(data)
-        return Event(state, self.stop_values)
-
-    def serial_read(self):
-        return ord(self.conn.read())
-
-    def listen(self):
-        while True:
-            data = self.serial_read()
-            self.event = self.create_event(data)
-            self.dispatcher(self.event)
 
     def log(self):
         print self.__str__()
