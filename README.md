@@ -1,6 +1,6 @@
 # Arduino Gamepad
 
-<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" width="600px" />
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" width="500px" />
 
 ### Load Arduino Sketch
 
@@ -33,7 +33,7 @@ gamepad.on('move', move)
 gamepad.listen()
 ```
 
-<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad2.png" width="600px" />
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.jpg" width="500px" />
 
 ### Events
 
