@@ -22,14 +22,14 @@ gamepad = Gamepad(serial)
 Create the callback function
 
 ```python
-def start(self, event):
-    print "Start!"
+def move(self, event):
+    print 'move', event.state.get_axes()
 ```
 
 Attach the callback to an event
 
 ```python
-gamepad.on('button-press', start)
+gamepad.on('move', move)
 gamepad.listen()
 ```
 
