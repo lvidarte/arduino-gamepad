@@ -218,11 +218,11 @@ class Gamepad(object):
         self.set_sensibility(sensibility)
         self.state = State()
         self.event = None
-        self.callbacks = []
-        self.hold_event(None)
+        self._callbacks = []
+        self._hold = None
 
     def on(self, event_name, handler):
-        self.callbacks.append({
+        self._callbacks.append({
             'event_name': event_name,
             'handler'   : handler
         })
@@ -237,22 +237,16 @@ class Gamepad(object):
             CENTER_VALUES[0] - factor,
             CENTER_VALUES[-1] + factor + 1)
 
-    def hold_event(self, event):
-        if event is None:
-            self.hold = None
-        else:
-            self.hold = event.id
+    def is_holding(self, event):
+        return self._hold == event.id
 
-    def event_is_hold(self, event):
-        return self.hold == event.id
-
-    def event_is_holdeable(self, event):
+    def _is_holdeable(self, event):
         for event_name in event.names:
             if event_name in NO_REPEATABLE_EVENTS:
-                return self.hold is None
+                return self._hold is None
         return False
 
-    def start_thread(self, handler, event):
+    def _start_thread(self, handler, event):
         t = threading.Thread(target=handler, args=(event,))
         t.daemon = True
         t.start()
@@ -262,7 +256,7 @@ class Gamepad(object):
             data = self.read_data()
             self.state.update(data)
             self.event = self.create_event()
-            self.dispatcher(self.event)
+            self._dispatcher(self.event)
 
     def read_data(self):
         data = ord(self.serial.read())
@@ -272,15 +266,15 @@ class Gamepad(object):
         state = copy.deepcopy(self.state)
         return Event(state, self.center_values)
 
-    def dispatcher(self, event):
+    def _dispatcher(self, event):
         if event.is_move_center():
-            self.hold_event(None)
-        for callback in self.callbacks:
+            self._hold = None
+        for callback in self._callbacks:
             for event_name in event.names:
                 if event_name == callback['event_name']:
-                    if self.event_is_holdeable(event):
-                        self.hold_event(event)
-                    self.start_thread(callback['handler'], event)
+                    if self._is_holdeable(event):
+                        self._hold = event.id
+                    self._start_thread(callback['handler'], event)
 
     def __str__(self):
         return "Gamepad: %s" % self.state.__str__()
