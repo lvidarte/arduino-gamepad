@@ -33,7 +33,7 @@ gamepad.on('move', move)
 gamepad.listen()
 ```
 
-<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.jpg" width="500px" />
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.jpg" width="600px" />
 
 ### Events
 
@@ -54,4 +54,7 @@ gamepad.listen()
 
 ### Snake example
 
+This is an example using another project: [arduino-matrix-rgb](https://github.com/lvidarte/arduino-matrix-rgb)
+
 [![Snake Arduino](http://img.youtube.com/vi/qr-ROlCskwY/0.jpg)](https://www.youtube.com/watch?v=qr-ROlCskwY)
+
