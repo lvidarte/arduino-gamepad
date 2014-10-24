@@ -1,6 +1,6 @@
 # Arduino Gamepad
 
-<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" width="400px" />
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad.png" width="600px" />
 
 ### Load Arduino Sketch
 
@@ -32,6 +32,8 @@ Attach the callback to an event
 gamepad.on('button-press', start)
 gamepad.listen()
 ```
+
+<img src="https://github.com/lvidarte/arduino-gamepad/blob/master/gamepad2.png" width="600px" />
 
 ### Events
 
