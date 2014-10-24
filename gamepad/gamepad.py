@@ -86,12 +86,12 @@ class Event:
         return self.is_button() and self.state.button == 0
 
     def _get_names_move(self):
-        names = []
         if self.is_move():
-            names.append('move')
-            names += self._get_names_move_x()
-            names += self._get_names_move_y()
-        return names
+            return ['move'] + \
+                self._get_names_move_x() + \
+                self._get_names_move_y()
+        else:
+            return []
 
     def _get_names_move_x(self):
         names = []
@@ -159,8 +159,7 @@ class Data:
         return self.__str__()
 
 
-class State:
-
+class State: 
     def __init__(self, x=0, y=0, switch=0, button=0):
         self.x = x
         self.y = y
