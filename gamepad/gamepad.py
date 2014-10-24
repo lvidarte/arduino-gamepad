@@ -17,7 +17,7 @@ CMD_NAMES = ('X', 'Y', 'SW', 'BT')
 
 BUTTON_STATUS = ('released', 'pressed')
 
-STOP_VALUES = (31, 32)
+CENTER_VALUES = (31, 32)
 
 NO_REPEATABLE_EVENTS = (
     'move-left',
@@ -26,15 +26,19 @@ NO_REPEATABLE_EVENTS = (
     'move-down'
 )
 
+SENSIBILITY_HIGH   = 10
+SENSIBILITY_MEDIUM = 5
+SENSIBILITY_LOW    = 1
+
 
 class Event:
 
     get_id = itertools.count().next
 
-    def __init__(self, state, stop_values):
+    def __init__(self, state, center_values = CENTER_VALUES):
         self.id = Event.get_id()
         self.state = state
-        self.stop_values = stop_values
+        self.center_values = center_values
         self.names = self.get_names()
 
     def get_names(self):
@@ -52,38 +56,47 @@ class Event:
         return self.is_x() or self.is_y()
 
     def is_move_center(self):
-        return self.state.x in self.stop_values and \
-               self.state.y in self.stop_values
+        return self.is_move() and \
+               self.state.x in self.center_values and \
+               self.state.y in self.center_values
 
     def is_move_left(self):
-        return self.state.x < self.stop_values[0]
+        return self.is_x() and \
+               self.state.x < self.center_values[0]
 
     def is_move_right(self):
-        return self.state.x > self.stop_values[-1]
+        return self.is_x() and \
+               self.state.x > self.center_values[-1]
 
     def is_move_up(self):
-        return self.state.y < self.stop_values[0]
+        return self.is_y() and \
+               self.state.y < self.center_values[0]
 
     def is_move_down(self):
-        return self.state.y > self.stop_values[-1]
+        return self.is_y() and \
+               self.state.y > self.center_values[-1]
 
     def is_switch(self):
         return self.state.data.cmd == CMD_SW
 
     def is_switch_press(self):
-        return self.is_switch() and self.state.switch == 1
+        return self.is_switch() and \
+               self.state.switch == 1
 
     def is_switch_release(self):
-        return self.is_switch() and self.state.switch == 0
+        return self.is_switch() and \
+               self.state.switch == 0
 
     def is_button(self):
         return self.state.data.cmd == CMD_BT
 
     def is_button_press(self):
-        return self.is_button() and self.state.button == 1
+        return self.is_button() and \
+               self.state.button == 1
 
     def is_button_release(self):
-        return self.is_button() and self.state.button == 0
+        return self.is_button() and \
+               self.state.button == 0
 
     def _get_names_move(self):
         if self.is_move():
@@ -137,6 +150,12 @@ class Event:
                 names.append('button-release')
         return names
 
+    def __str__(self):
+        return "Event: %s" % self.state.__str__()
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class Data:
 
@@ -160,6 +179,7 @@ class Data:
 
 
 class State: 
+
     def __init__(self, x=0, y=0, switch=0, button=0):
         self.x = x
         self.y = y
@@ -193,13 +213,13 @@ class State:
 
 class Gamepad(object):
 
-    def __init__(self, serial):
+    def __init__(self, serial, sensibility = SENSIBILITY_HIGH):
         self.serial = serial
+        self.set_sensibility(sensibility)
         self.state = State()
         self.event = None
         self.callbacks = []
         self.hold_event(None)
-        self.set_sensibility(10)
 
     def on(self, event_name, handler):
         self.callbacks.append({
@@ -207,16 +227,15 @@ class Gamepad(object):
             'handler'   : handler
         })
 
-    def set_sensibility(self, value = 10):
-        if value > 10:
-            value = 10
-        if value < 1:
-            value = 1
-        factor = 30 - (value * 3)
-        self.stop_values = (
-            STOP_VALUES[0] - factor,
-            STOP_VALUES[-1] + factor + 1
-        )
+    def set_sensibility(self, factor):
+        if factor > 10:
+            factor = 10
+        if factor < 1:
+            factor = 1
+        factor = 30 - (factor * 3)
+        self.center_values = range(
+            CENTER_VALUES[0] - factor,
+            CENTER_VALUES[-1] + factor + 1)
 
     def hold_event(self, event):
         if event is None:
@@ -250,8 +269,8 @@ class Gamepad(object):
         return Data(data)
 
     def create_event(self):
-        state = copy.copy(self.state)
-        return Event(state, self.stop_values)
+        state = copy.deepcopy(self.state)
+        return Event(state, self.center_values)
 
     def dispatcher(self, event):
         if event.is_move_center():
@@ -263,9 +282,9 @@ class Gamepad(object):
                         self.hold_event(event)
                     self.start_thread(callback['handler'], event)
 
-    def log(self):
-        print self.__str__()
-
     def __str__(self):
-        return "(%s, %s)" % (self.x, self.y)
+        return "Gamepad: %s" % self.state.__str__()
+
+    def __repr__(self):
+        return self.__str__()
 

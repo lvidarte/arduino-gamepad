@@ -195,8 +195,7 @@ if __name__ == '__main__':
         print "Can't connect to serial2 device"
         sys.exit(1)
 
-    g = gamepad.Gamepad(serial1)
-    g.set_sensibility(2)
+    g = gamepad.Gamepad(serial1, sensibility = 2)
     m = matrix.Matrix(serial2)
     time.sleep(2)
     s = Snake(g, m)
