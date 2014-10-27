@@ -52,7 +52,35 @@ gamepad.listen()
     switch-press
     switch-release
 
-### Snake example
+### Special events
+
+The `move-right`, `move-left`, `move-up` and `move-down` events are holded when were fired and unholded when the `move-center` event is fired.
+
+This is useful if you want to run some code by a timer. For example, imagine you want to implement pacman like game. If you move left the pacman will continue move left until it hit the next wall.
+
+```python
+def move(event):
+    while gamepad.is_holding(event):
+        print 'move',
+        if event.is_move_left():
+            print 'left'
+        elif event.is_move_right():
+            print 'right'
+        elif event.is_move_up():
+            print 'up'
+        elif event.is_move_down():
+            print 'down'
+        time.sleep(1)
+
+def move_center(event):
+    print "center", event.state.get_axes()
+
+gamepad.on('move', move)
+gamepad.on('move-center', move_center)
+gamepad.listen()
+```
+
+### Full example using a rgb led matrix: Snake
 
 This is an example using another project: [arduino-matrix-rgb](https://github.com/lvidarte/arduino-matrix-rgb)
 

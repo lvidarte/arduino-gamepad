@@ -5,7 +5,7 @@ from serial import Serial
 serial = Serial('/dev/ttyUSB0', 9600)
 gamepad = Gamepad(serial)
 
-print """
+"""
 this is the way to repeat some code on
 the following events
 
