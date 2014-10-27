@@ -54,7 +54,7 @@ gamepad.listen()
 
 ### Special events
 
-The `move-right`, `move-left`, `move-up` and `move-down` events are holded when were fired and unholded when the `move-center` event is fired.
+The `move-right`, `move-left`, `move-up` and `move-down` events are holding when were fired and unholding when the `move-center` event is fired.
 
 This is useful if you want to run some code by a timer. For example, imagine you want to implement pacman like game. If you move left the pacman will continue move left until it hit the next wall.
 
